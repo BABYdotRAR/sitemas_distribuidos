@@ -3,28 +3,30 @@ import java.net.*;
 
 public class Program {
     public static int PORT = 8000;
-
+    private static String host1 = "";
+    private static String host2 = "";
+    private static String host3 = "";
     public static void main(String[] args) throws Exception {
         int N = Integer.parseInt(args[0]);
         int node = Integer.parseInt(args[1]);
 
         if(node == 0){
-            TCPClientAndMatrixHandler("localhost", "localhost", "localhost", N);
+            TCPClientAndMatrixHandler(host1, host2, host3, N);
         } else {
             TCPServer(node);
         }
     }
 
     public static void TCPServer(int node) throws Exception{
-        ServerSocket server = new ServerSocket(PORT + node);
+        ServerSocket server = new ServerSocket(PORT);
         server.setReuseAddress(true);
         int checkpoint = 0;
 
-        System.out.println("Waiting connections from client...");
+        System.out.println("Waiting connections from client in node " + node + "...");
         Socket client = server.accept();
         System.out.println("Client connected from " + client.getInetAddress().getHostAddress());
 
-        System.out.println("Server checkpoint " + ++checkpoint + ": client connected successfully.");
+        System.out.println("Server " + node + " checkpoint " + ++checkpoint + ": client connected successfully.");
         ObjectInputStream in = new ObjectInputStream(client.getInputStream());
         
         double[][] A_current = (double[][])in.readObject();
@@ -32,19 +34,19 @@ public class Program {
         double[][] B2 = (double[][])in.readObject();
         double[][] B3 = (double[][])in.readObject();
 
-        System.out.println("Server checkpoint " + ++checkpoint + ": matrices' reading completed.");
+        System.out.println("Server " + node + " checkpoint " + ++checkpoint + ": matrices' reading completed.");
         double[][] C1 = multiplyMatrices(A_current, B1);
         double[][] C2 = multiplyMatrices(A_current, B2);
         double[][] C3 = multiplyMatrices(A_current, B3);
 
         ObjectOutputStream out = new ObjectOutputStream(client.getOutputStream());
 
-        System.out.println("Server checkpoint " + ++checkpoint + ": multiply matrices completed.");
+        System.out.println("Server " + node + " checkpoint " + ++checkpoint + ": multiply matrices completed.");
         out.writeObject(C1);
         out.writeObject(C2);
         out.writeObject(C3);
 
-        System.out.println("Server checkpoint " + ++checkpoint + ": matrices sended to client.");
+        System.out.println("Server " + node + " checkpoint " + ++checkpoint + ": matrices sended to client.");
         in.close();
         out.close();
         client.close();
@@ -70,9 +72,9 @@ public class Program {
         double[][] B_3 = getThirdPartFromMatrix(B, 3);
 
         System.out.println("Checkpoint " + ++checkpoint + ": matrices divided.");
-        ServerConnection conn1 = new ServerConnection(host1, 8001, A_1, B_1, B_2, B_3);
-        ServerConnection conn2 = new ServerConnection(host2, 8002, A_2, B_1, B_2, B_3);
-        ServerConnection conn3 = new ServerConnection(host3, 8003, A_3, B_1, B_2, B_3);
+        ServerConnection conn1 = new ServerConnection(host1, PORT, A_1, B_1, B_2, B_3);
+        ServerConnection conn2 = new ServerConnection(host2, PORT, A_2, B_1, B_2, B_3);
+        ServerConnection conn3 = new ServerConnection(host3, PORT, A_3, B_1, B_2, B_3);
 
         System.out.println("Checkpoint " + ++checkpoint + ": Connections created.");
         Thread tConn1 = new Thread(conn1);
